@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Roblox Platform</title>
     <style>
         body {
@@ -11,6 +11,8 @@
             background: #191919;
             color: white;
             overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
         }
         #auth-screen {
             position: fixed;
@@ -70,12 +72,31 @@
         .game-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
         .game-players { font-size: 12px; color: #aaa; }
 
-        #game-canvas-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; }
+        #game-canvas-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; touch-action: none; }
         #exit-game-btn {
             position: absolute; top: 20px; right: 20px; z-index: 210;
             background: #ff4444; color: white; border: none; padding: 10px 20px;
             font-weight: bold; border-radius: 6px; cursor: pointer;
         }
+
+        /* عناصر التحكم للموبايل */
+        #joystick-zone {
+            position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px;
+            background: rgba(255, 255, 255, 0.2); border-radius: 50%; z-index: 210;
+            display: flex; justify-content: center; align-items: center; border: 2px solid rgba(255, 255, 255, 0.4);
+        }
+        #joystick-stick {
+            width: 50px; height: 50px; background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%; position: absolute;
+        }
+        #jump-btn {
+            position: absolute; bottom: 40px; right: 40px; width: 80px; height: 80px;
+            background: rgba(255, 255, 255, 0.3); border-radius: 50%; z-index: 210;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 24px; color: white; font-weight: bold; border: 2px solid rgba(255, 255, 255, 0.5);
+            touch-action: manipulation;
+        }
+        #jump-btn:active { background: rgba(255, 255, 255, 0.6); }
     </style>
 </head>
 <body>
@@ -114,7 +135,7 @@
 
         <div class="section-title">المابات (Games)</div>
         <div class="games-grid">
-            <div class="game-card" onclick="launchGame('Grow a Garden', 0x4CAF50)">
+            <div class="game-card" onclick="launchGame('garden')">
                 <div class="game-thumb" style="background-color: #2e7d32;"></div>
                 <div class="game-info">
                     <div class="game-title">🌱 Grow a Garden</div>
@@ -122,7 +143,7 @@
                 </div>
             </div>
 
-            <div class="game-card" onclick="launchGame('Obby Parkour', 0xff5722)">
+            <div class="game-card" onclick="launchGame('obby')">
                 <div class="game-thumb" style="background-color: #d84315;"></div>
                 <div class="game-info">
                     <div class="game-title">🏃 Obby Parkour</div>
@@ -134,6 +155,8 @@
 
     <div id="game-canvas-container">
         <button id="exit-game-btn" onclick="quitGame()">خروج من الماب ✕</button>
+        <div id="joystick-zone"><div id="joystick-stick"></div></div>
+        <div id="jump-btn">⬆</div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -217,7 +240,7 @@
             });
         }
 
-        function launchGame(mapName, mapColor) {
+        function launchGame(mapType) {
             document.getElementById('main-dashboard').style.display = 'none';
             const container = document.getElementById('game-canvas-container');
             container.style.display = 'block';
@@ -232,20 +255,71 @@
             container.appendChild(renderer.domElement);
             currentRenderer = renderer;
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
             scene.add(ambientLight);
 
             const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            sunLight.position.set(20, 40, 20);
+            sunLight.position.set(30, 50, 30);
             sunLight.castShadow = true;
             scene.add(sunLight);
 
-            const floorGeo = new THREE.PlaneGeometry(100, 100);
-            const floorMat = new THREE.MeshLambertMaterial({ color: mapColor });
-            const floor = new THREE.Mesh(floorGeo, floorMat);
-            floor.rotation.x = -Math.PI / 2;
-            floor.receiveShadow = true;
-            scene.add(floor);
+            function createBox(x, y, z, w, h, d, color) {
+                const geo = new THREE.BoxGeometry(w, h, d);
+                const mat = new THREE.MeshLambertMaterial({ color: color });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(x, y, z);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                scene.add(mesh);
+                return mesh;
+            }
+
+            if (mapType === 'garden') {
+                const floorGeo = new THREE.PlaneGeometry(120, 120);
+                const floorMat = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
+                const floor = new THREE.Mesh(floorGeo, floorMat);
+                floor.rotation.x = -Math.PI / 2;
+                floor.receiveShadow = true;
+                scene.add(floor);
+
+                createBox(0, 3, -15, 8, 6, 8, 0x8d6e63);
+                createBox(0, 7, -15, 10, 3, 10, 0xd32f2f);
+
+                const treePositions = [[-10, -10], [12, -8], [-15, 15], [15, 20], [-8, -25]];
+                treePositions.forEach(pos => {
+                    createBox(pos[0], 2, pos[1], 1.2, 4, 1.2, 0x5d4037);
+                    createBox(pos[0], 5, pos[1], 4, 4, 4, 0x2e7d32);
+                });
+
+                for (let i = -10; i <= 10; i += 4) {
+                    createBox(i, 0.2, -5, 2, 0.4, 2, 0xffb300);
+                    createBox(i, 0.2, 5, 2, 0.4, 2, 0xe91e63);
+                }
+
+            } else if (mapType === 'obby') {
+                scene.background = new THREE.Color(0x212121);
+
+                const floorGeo = new THREE.PlaneGeometry(200, 200);
+                const floorMat = new THREE.MeshLambertMaterial({ color: 0xd32f2f });
+                const floor = new THREE.Mesh(floorGeo, floorMat);
+                floor.rotation.x = -Math.PI / 2;
+                floor.position.y = -5;
+                scene.add(floor);
+
+                createBox(0, 0, 0, 6, 1, 6, 0x4caf50);
+
+                const obbyPlatforms = [
+                    [0, 1, -8, 4, 1, 4, 0x00bcd4],
+                    [3, 2, -16, 4, 1, 4, 0xffeb3b],
+                    [-2, 3.5, -24, 4, 1, 4, 0xe91e63],
+                    [2, 5, -32, 4, 1, 4, 0x9c27b0],
+                    [0, 7, -42, 8, 1, 8, 0x4caf50]
+                ];
+
+                obbyPlatforms.forEach(p => {
+                    createBox(p[0], p[1], p[2], p[3], p[4], p[5], p[6]);
+                });
+            }
 
             const playerGroup = new THREE.Group();
             const bodyGeo = new THREE.BoxGeometry(1, 1.5, 0.8);
@@ -260,9 +334,13 @@
             head.position.y = 2.4;
             playerGroup.add(head);
 
+            playerGroup.position.set(0, 0.5, 0);
             scene.add(playerGroup);
 
             const keys = {};
+            let touchMoveX = 0, touchMoveZ = 0;
+            let jumpPressed = false;
+
             const speed = 0.18;
             let yVelocity = 0;
             const gravity = -0.012;
@@ -272,6 +350,64 @@
             const onKeyUp = (e) => keys[e.code] = false;
             window.addEventListener('keydown', onKeyDown);
             window.addEventListener('keyup', onKeyUp);
+
+            // إعداد الجويستيك للموبايل
+            const zone = document.getElementById('joystick-zone');
+            const stick = document.getElementById('joystick-stick');
+            const jumpBtn = document.getElementById('jump-btn');
+
+            let touchId = null;
+            let center = { x: 0, y: 0 };
+
+            zone.addEventListener('touchstart', (e) => {
+                const touch = e.changedTouches[0];
+                touchId = touch.identifier;
+                const rect = zone.getBoundingClientRect();
+                center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+                updateJoystick(touch);
+            });
+
+            zone.addEventListener('touchmove', (e) => {
+                for (let touch of e.changedTouches) {
+                    if (touch.identifier === touchId) {
+                        updateJoystick(touch);
+                    }
+                }
+            });
+
+            const resetJoystick = (e) => {
+                for (let touch of e.changedTouches) {
+                    if (touch.identifier === touchId) {
+                        touchId = null;
+                        stick.style.transform = `translate(0px, 0px)`;
+                        touchMoveX = 0;
+                        touchMoveZ = 0;
+                    }
+                }
+            };
+
+            zone.addEventListener('touchend', resetJoystick);
+            zone.addEventListener('touchcancel', resetJoystick);
+
+            function updateJoystick(touch) {
+                const dx = touch.clientX - center.x;
+                const dy = touch.clientY - center.y;
+                const dist = Math.min(Math.hypot(dx, dy), 40);
+                const angle = Math.atan2(dy, dx);
+                
+                const moveX = Math.cos(angle) * dist;
+                const moveY = Math.sin(angle) * dist;
+
+                stick.style.transform = `translate(${moveX}px, ${moveY}px)`;
+
+                touchMoveX = moveX / 40;
+                touchMoveZ = moveY / 40;
+            }
+
+            jumpBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                jumpPressed = true;
+            });
 
             let animId;
             function animate() {
@@ -283,23 +419,35 @@
                 if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
                 if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
 
+                if (touchMoveX !== 0 || touchMoveZ !== 0) {
+                    moveX = touchMoveX;
+                    moveZ = touchMoveZ;
+                }
+
                 if (moveX !== 0 || moveZ !== 0) {
                     playerGroup.rotation.y = Math.atan2(moveX, moveZ);
                     playerGroup.translateZ(speed);
                 }
 
-                if (keys['Space'] && isGrounded) {
+                if ((keys['Space'] || jumpPressed) && isGrounded) {
                     yVelocity = 0.28;
                     isGrounded = false;
+                    jumpPressed = false;
                 }
 
                 playerGroup.position.y += yVelocity;
                 if (!isGrounded) yVelocity += gravity;
 
-                if (playerGroup.position.y <= 0) {
-                    playerGroup.position.y = 0;
-                    yVelocity = 0;
-                    isGrounded = true;
+                let minHeight = (mapType === 'obby') ? -4 : 0;
+                if (playerGroup.position.y <= minHeight) {
+                    if (mapType === 'obby') {
+                        playerGroup.position.set(0, 1, 0);
+                        yVelocity = 0;
+                    } else {
+                        playerGroup.position.y = 0;
+                        yVelocity = 0;
+                        isGrounded = true;
+                    }
                 }
 
                 camera.position.set(playerGroup.position.x, playerGroup.position.y + 6, playerGroup.position.z + 10);
@@ -321,3 +469,5 @@
     </script>
 </body>
 </html>
+
+
