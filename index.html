@@ -79,7 +79,7 @@
             font-weight: bold; border-radius: 6px; cursor: pointer;
         }
 
-        /* عناصر التحكم للموبايل */
+        /* تحكم الموبايل */
         #joystick-zone {
             position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px;
             background: rgba(255, 255, 255, 0.2); border-radius: 50%; z-index: 210;
@@ -263,14 +263,14 @@
             sunLight.castShadow = true;
             scene.add(sunLight);
 
-            function createBox(x, y, z, w, h, d, color) {
+            function createBox(x, y, z, w, h, d, color, parent = scene) {
                 const geo = new THREE.BoxGeometry(w, h, d);
                 const mat = new THREE.MeshLambertMaterial({ color: color });
                 const mesh = new THREE.Mesh(geo, mat);
                 mesh.position.set(x, y, z);
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
-                scene.add(mesh);
+                parent.add(mesh);
                 return mesh;
             }
 
@@ -321,18 +321,44 @@
                 });
             }
 
+            // === تصميم شخصية اللاعب المطلوبة بنفس تفاصيل الصورة ===
             const playerGroup = new THREE.Group();
-            const bodyGeo = new THREE.BoxGeometry(1, 1.5, 0.8);
-            const bodyMat = new THREE.MeshLambertMaterial({ color: 0x3F51B5 });
-            const body = new THREE.Mesh(bodyGeo, bodyMat);
-            body.position.y = 1.25;
-            playerGroup.add(body);
 
-            const headGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-            const headMat = new THREE.MeshLambertMaterial({ color: 0xFFC107 });
-            const head = new THREE.Mesh(headGeo, headMat);
-            head.position.y = 2.4;
-            playerGroup.add(head);
+            // 1. الجسم / الكنزة الكحلي (Dark Blue Shirt)
+            createBox(0, 1.25, 0, 1.1, 1.3, 0.6, 0x1A237E, playerGroup);
+
+            // طباعة الصورة على الصدر (Print on shirt)
+            createBox(0, 1.3, 0.31, 0.6, 0.6, 0.02, 0x80CBC4, playerGroup);
+
+            // 2. الرأس وبشرة الوجه (Skin Head)
+            createBox(0, 2.3, 0, 0.85, 0.85, 0.85, 0xFFE0B2, playerGroup);
+
+            // 3. الشعر الأحمر السبايكي (Spiky Red Hair)
+            createBox(0, 2.8, 0.05, 0.9, 0.25, 0.9, 0x8D1B1B, playerGroup); // قاعدة الشعر
+            createBox(0.1, 3.0, -0.1, 0.4, 0.3, 0.5, 0xB71C1C, playerGroup); // السبايك الأمامي
+            createBox(-0.15, 2.95, 0.1, 0.4, 0.25, 0.4, 0x990000, playerGroup);
+
+            // 4. النظارة البنية (Brown Glasses)
+            createBox(0, 2.35, 0.44, 0.75, 0.22, 0.05, 0x4E342E, playerGroup); // إطار النظارة
+            createBox(0, 2.35, 0.45, 0.65, 0.15, 0.05, 0xFFFFFF, playerGroup); // العدسات
+
+            // 5. الأذرع (Arms)
+            createBox(-0.75, 1.25, 0, 0.35, 1.2, 0.45, 0x1A237E, playerGroup); // ذراع شمال
+            createBox(-0.75, 0.45, 0, 0.33, 0.4, 0.42, 0xFFE0B2, playerGroup); // يد شمال
+
+            createBox(0.75, 1.25, 0, 0.35, 1.2, 0.45, 0x1A237E, playerGroup);  // ذراع يمين
+            createBox(0.75, 0.45, 0, 0.33, 0.4, 0.42, 0xFFE0B2, playerGroup);  // يد يمين
+
+            // 6. البنطلون الجينز الغامق (Jeans Pants)
+            createBox(-0.28, 0.35, 0, 0.45, 0.9, 0.5, 0x1565C0, playerGroup); // رجل شمال
+            createBox(0.28, 0.35, 0, 0.45, 0.9, 0.5, 0x1565C0, playerGroup);  // رجل يمين
+
+            // 7. الحذاء الأحمر والأبيض (Red & White Sneakers)
+            createBox(-0.28, -0.15, 0.05, 0.47, 0.25, 0.6, 0xB71C1C, playerGroup); // حذاء أحمر شمال
+            createBox(-0.28, -0.22, 0.1, 0.48, 0.1, 0.5, 0xFFFFFF, playerGroup);   // مقدمة بيضاء
+            
+            createBox(0.28, -0.15, 0.05, 0.47, 0.25, 0.6, 0xB71C1C, playerGroup);  // حذاء أحمر يمين
+            createBox(0.28, -0.22, 0.1, 0.48, 0.1, 0.5, 0xFFFFFF, playerGroup);    // مقدمة بيضاء
 
             playerGroup.position.set(0, 0.5, 0);
             scene.add(playerGroup);
@@ -469,5 +495,3 @@
     </script>
 </body>
 </html>
-
-
