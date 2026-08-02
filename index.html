@@ -3,96 +3,78 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roblox-Style 3D Game</title>
+    <title>Roblox Platform</title>
     <style>
         body {
             margin: 0;
-            overflow: hidden;
-            font-family: sans-serif;
-            background: #111;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #191919;
+            color: white;
+            overflow-x: hidden;
         }
         #auth-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop') no-repeat center center;
-            background-size: cover;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #111;
+            display: flex; justify-content: center; align-items: center;
             z-index: 100;
         }
         .auth-box {
-            background: rgba(30, 30, 30, 0.95);
-            padding: 40px;
-            border-radius: 12px;
-            text-align: center;
-            color: white;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
-            width: 320px;
-            border: 1px solid #444;
-        }
-        .auth-box h2 {
-            margin-top: 0;
-            font-size: 24px;
-            margin-bottom: 20px;
+            background: #232527; padding: 40px; border-radius: 12px;
+            text-align: center; width: 320px; border: 1px solid #393b3d;
         }
         .auth-box input {
-            display: block;
-            width: 100%;
-            margin: 10px 0;
-            padding: 12px;
-            border: 1px solid #555;
-            background: #222;
-            color: white;
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 16px;
+            display: block; width: 100%; margin: 10px 0; padding: 12px;
+            border: 1px solid #393b3d; background: #111; color: white;
+            border-radius: 6px; box-sizing: border-box;
         }
         .auth-box button {
-            background: #00b06f;
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            font-size: 18px;
-            font-weight: bold;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 15px;
-            transition: 0.2s;
+            background: #00a2ff; color: white; border: none; padding: 12px;
+            font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%;
+            margin-top: 10px;
         }
-        .auth-box button:hover {
-            background: #008f5a;
+        .toggle-text { margin-top: 15px; font-size: 14px; color: #aaa; }
+        .toggle-text span { color: #00a2ff; cursor: pointer; text-decoration: underline; }
+
+        #main-dashboard { display: none; padding: 20px; }
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #232527; padding: 15px 30px; border-radius: 8px; margin-bottom: 25px;
         }
-        .toggle-text {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #aaa;
+        .logo { font-size: 24px; font-weight: bold; color: #00a2ff; }
+        .user-info { font-size: 18px; font-weight: bold; }
+
+        .section-title { font-size: 22px; margin-bottom: 15px; border-bottom: 2px solid #393b3d; padding-bottom: 5px; }
+
+        .friends-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+        .friends-controls input {
+            padding: 10px; border-radius: 6px; border: 1px solid #393b3d; background: #232527; color: white; flex: 1; min-width: 150px;
         }
-        .toggle-text span {
-            color: #00ff88;
-            cursor: pointer;
-            text-decoration: underline;
+        .friends-controls button { background: #00b06f; border: none; color: white; padding: 10px 15px; border-radius: 6px; cursor: pointer; }
+
+        .friends-container { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 30px; }
+        .friend-card {
+            background: #232527; padding: 15px; border-radius: 8px; text-align: center;
+            min-width: 100px; border: 1px solid #393b3d;
         }
-        #ui {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            color: white;
-            font-size: 18px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px 15px;
-            border-radius: 8px;
-            pointer-events: none;
-            display: none;
-            z-index: 10;
+        .friend-avatar { width: 50px; height: 50px; background: #00a2ff; border-radius: 50%; margin: 0 auto 10px; }
+
+        .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+        .game-card {
+            background: #232527; border-radius: 8px; overflow: hidden; border: 1px solid #393b3d;
+            cursor: pointer; transition: 0.2s;
         }
-        #player-name-display {
-            color: #00ff88;
-            font-weight: bold;
+        .game-card:hover { transform: translateY(-5px); border-color: #00a2ff; }
+        .game-thumb { height: 120px; background-size: cover; background-position: center; }
+        .game-info { padding: 12px; }
+        .game-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
+        .game-players { font-size: 12px; color: #aaa; }
+
+        #game-canvas-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; }
+        #exit-game-btn {
+            position: absolute; top: 20px; right: 20px; z-index: 210;
+            background: #ff4444; color: white; border: none; padding: 10px 20px;
+            font-weight: bold; border-radius: 6px; cursor: pointer;
         }
     </style>
 </head>
@@ -103,93 +85,143 @@
             <h2>تسجيل الدخول</h2>
             <input type="text" id="login-username" placeholder="اسم اللاعب">
             <input type="password" id="login-password" placeholder="كلمة المرور">
-            <button id="login-btn">دخول اللعبة</button>
-            <div class="toggle-text">معندكش حساب؟ <span id="go-to-signup">إنشاء حساب جديد</span></div>
+            <button id="login-btn">دخول</button>
+            <div class="toggle-text">معندكش حساب؟ <span id="go-to-signup">إنشاء حساب</span></div>
         </div>
 
         <div class="auth-box" id="signup-form" style="display: none;">
             <h2>إنشاء حساب جديد</h2>
             <input type="text" id="signup-username" placeholder="اسم اللاعب الجديد">
             <input type="password" id="signup-password" placeholder="كلمة المرور">
-            <button id="signup-btn">إنشاء الحساب والدخول</button>
-            <div class="toggle-text">عالمسجل حساب بالفعل؟ <span id="go-to-login">تسجيل الدخول</span></div>
+            <button id="signup-btn">إنشاء الحساب</button>
+            <div class="toggle-text">عندك حساب؟ <span id="go-to-login">تسجيل الدخول</span></div>
         </div>
     </div>
 
-    <div id="ui">
-        <b>اللاعب: <span id="player-name-display"></span></b><br><br>
-        <b>التحكم:</b><br>
-        • الحركة: W, A, S, D<br>
-        • القفز: Space
+    <div id="main-dashboard">
+        <header>
+            <div class="logo">ROBLOX CLONE</div>
+            <div class="user-info">مرحباً، <span id="display-user"></span> 👋</div>
+        </header>
+
+        <div class="section-title">الأصدقاء (Friends)</div>
+        <div class="friends-controls">
+            <input type="text" id="friend-input" placeholder="اكتب اسم الصديق للإضافة...">
+            <button id="add-friend-btn">إضافة صديق</button>
+            <input type="text" id="search-friend-input" placeholder="🔍 ابحث في قائمة أصدقائك..." style="background: #111;">
+        </div>
+        <div class="friends-container" id="friends-list"></div>
+
+        <div class="section-title">المابات (Games)</div>
+        <div class="games-grid">
+            <div class="game-card" onclick="launchGame('Grow a Garden', 0x4CAF50)">
+                <div class="game-thumb" style="background-color: #2e7d32;"></div>
+                <div class="game-info">
+                    <div class="game-title">🌱 Grow a Garden</div>
+                    <div class="game-players">👥 1,250 يلعبون الآن</div>
+                </div>
+            </div>
+
+            <div class="game-card" onclick="launchGame('Obby Parkour', 0xff5722)">
+                <div class="game-thumb" style="background-color: #d84315;"></div>
+                <div class="game-info">
+                    <div class="game-title">🏃 Obby Parkour</div>
+                    <div class="game-players">👥 840 يلعبون الآن</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-canvas-container">
+        <button id="exit-game-btn" onclick="quitGame()">خروج من الماب ✕</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
-        const loginForm = document.getElementById('login-form');
-        const signupForm = document.getElementById('signup-form');
+        let currentUser = "";
+        let currentRenderer = null;
 
         document.getElementById('go-to-signup').addEventListener('click', () => {
-            loginForm.style.display = 'none';
-            signupForm.style.display = 'block';
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('signup-form').style.display = 'block';
         });
 
         document.getElementById('go-to-login').addEventListener('click', () => {
-            signupForm.style.display = 'none';
-            loginForm.style.display = 'block';
+            document.getElementById('signup-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
         });
 
         document.getElementById('signup-btn').addEventListener('click', () => {
-            const username = document.getElementById('signup-username').value.trim();
-            const password = document.getElementById('signup-password').value.trim();
-
-            if (!username || !password) {
-                alert("يرجى ملء جميع الحقول!");
-                return;
-            }
-
-            if (localStorage.getItem('user_' + username)) {
-                alert("اسم المستخدم هذا موجود بالفعل، اختر اسماً آخر!");
-                return;
-            }
-
-            localStorage.setItem('user_' + username, password);
-            alert("تم إنشاء الحساب بنجاح!");
-            enterGame(username);
+            const user = document.getElementById('signup-username').value.trim();
+            const pass = document.getElementById('signup-password').value.trim();
+            if (!user || !pass) return alert("املأ البيانات!");
+            if (localStorage.getItem('user_' + user)) return alert("الاسم موجود بالفعل!");
+            
+            localStorage.setItem('user_' + user, pass);
+            loadDashboard(user);
         });
 
         document.getElementById('login-btn').addEventListener('click', () => {
-            const username = document.getElementById('login-username').value.trim();
-            const password = document.getElementById('login-password').value.trim();
+            const user = document.getElementById('login-username').value.trim();
+            const pass = document.getElementById('login-password').value.trim();
+            const savedPass = localStorage.getItem('user_' + user);
 
-            if (!username || !password) {
-                alert("يرجى ملء جميع الحقول!");
-                return;
-            }
-
-            const savedPassword = localStorage.getItem('user_' + username);
-
-            if (!savedPassword) {
-                alert("هذا الحساب غير موجود، يرجى إنشاء حساب جديد!");
-                return;
-            }
-
-            if (savedPassword !== password) {
-                alert("كلمة المرور غير صحيحة!");
-                return;
-            }
-
-            enterGame(username);
+            if (!savedPass || savedPass !== pass) return alert("البيانات غير صحيحة!");
+            loadDashboard(user);
         });
 
-        function enterGame(username) {
+        function loadDashboard(user) {
+            currentUser = user;
             document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('ui').style.display = 'block';
-            document.getElementById('player-name-display').innerText = username;
-            startGame();
+            document.getElementById('main-dashboard').style.display = 'block';
+            document.getElementById('display-user').innerText = user;
+            renderFriends();
         }
 
-        function startGame() {
+        document.getElementById('add-friend-btn').addEventListener('click', () => {
+            const friendName = document.getElementById('friend-input').value.trim();
+            if (!friendName) return;
+
+            let friends = JSON.parse(localStorage.getItem('friends_' + currentUser) || "[]");
+            if (!friends.includes(friendName)) {
+                friends.push(friendName);
+                localStorage.setItem('friends_' + currentUser, JSON.stringify(friends));
+                renderFriends();
+            }
+            document.getElementById('friend-input').value = "";
+        });
+
+        document.getElementById('search-friend-input').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            renderFriends(query);
+        });
+
+        function renderFriends(filter = "") {
+            const container = document.getElementById('friends-list');
+            container.innerHTML = "";
+            let friends = JSON.parse(localStorage.getItem('friends_' + currentUser) || "[]");
+
+            const filteredFriends = friends.filter(friend => friend.toLowerCase().includes(filter));
+
+            if (filteredFriends.length === 0) {
+                container.innerHTML = `<div style="color: #888; padding: 10px;">لا يوجد أصدقاء بهذا الاسم</div>`;
+                return;
+            }
+
+            filteredFriends.forEach(friend => {
+                const card = document.createElement('div');
+                card.className = 'friend-card';
+                card.innerHTML = `<div class="friend-avatar"></div><div>${friend}</div>`;
+                container.appendChild(card);
+            });
+        }
+
+        function launchGame(mapName, mapColor) {
+            document.getElementById('main-dashboard').style.display = 'none';
+            const container = document.getElementById('game-canvas-container');
+            container.style.display = 'block';
+
             const scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb);
 
@@ -197,7 +229,8 @@
             const renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
-            document.body.appendChild(renderer.domElement);
+            container.appendChild(renderer.domElement);
+            currentRenderer = renderer;
 
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
             scene.add(ambientLight);
@@ -207,41 +240,24 @@
             sunLight.castShadow = true;
             scene.add(sunLight);
 
-            const floorGeometry = new THREE.PlaneGeometry(100, 100);
-            const floorMaterial = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
-            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            const floorGeo = new THREE.PlaneGeometry(100, 100);
+            const floorMat = new THREE.MeshLambertMaterial({ color: mapColor });
+            const floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
             floor.receiveShadow = true;
             scene.add(floor);
 
-            function createBox(x, y, z, width, height, depth, color) {
-                const geo = new THREE.BoxGeometry(width, height, depth);
-                const mat = new THREE.MeshLambertMaterial({ color: color });
-                const mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set(x, y, z);
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
-                scene.add(mesh);
-            }
-
-            createBox(0, 1.5, -10, 3, 3, 3, 0xff5722);
-            createBox(5, 2.5, -15, 4, 5, 4, 0x2196F3);
-            createBox(-6, 1, -8, 2, 2, 2, 0xFFEB3B);
-
             const playerGroup = new THREE.Group();
-
             const bodyGeo = new THREE.BoxGeometry(1, 1.5, 0.8);
             const bodyMat = new THREE.MeshLambertMaterial({ color: 0x3F51B5 });
             const body = new THREE.Mesh(bodyGeo, bodyMat);
             body.position.y = 1.25;
-            body.castShadow = true;
             playerGroup.add(body);
 
             const headGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
             const headMat = new THREE.MeshLambertMaterial({ color: 0xFFC107 });
             const head = new THREE.Mesh(headGeo, headMat);
             head.position.y = 2.4;
-            head.castShadow = true;
             playerGroup.add(head);
 
             scene.add(playerGroup);
@@ -252,21 +268,23 @@
             const gravity = -0.012;
             let isGrounded = true;
 
-            window.addEventListener('keydown', (e) => keys[e.code] = true);
-            window.addEventListener('keyup', (e) => keys[e.code] = false);
+            const onKeyDown = (e) => keys[e.code] = true;
+            const onKeyUp = (e) => keys[e.code] = false;
+            window.addEventListener('keydown', onKeyDown);
+            window.addEventListener('keyup', onKeyUp);
 
-            function updatePlayer() {
-                let moveX = 0;
-                let moveZ = 0;
+            let animId;
+            function animate() {
+                animId = requestAnimationFrame(animate);
 
+                let moveX = 0, moveZ = 0;
                 if (keys['KeyW'] || keys['ArrowUp']) moveZ -= 1;
                 if (keys['KeyS'] || keys['ArrowDown']) moveZ += 1;
                 if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
                 if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
 
                 if (moveX !== 0 || moveZ !== 0) {
-                    const angle = Math.atan2(moveX, moveZ);
-                    playerGroup.rotation.y = angle;
+                    playerGroup.rotation.y = Math.atan2(moveX, moveZ);
                     playerGroup.translateZ(speed);
                 }
 
@@ -276,9 +294,7 @@
                 }
 
                 playerGroup.position.y += yVelocity;
-                if (!isGrounded) {
-                    yVelocity += gravity;
-                }
+                if (!isGrounded) yVelocity += gravity;
 
                 if (playerGroup.position.y <= 0) {
                     playerGroup.position.y = 0;
@@ -286,31 +302,22 @@
                     isGrounded = true;
                 }
 
-                const targetCameraPosition = new THREE.Vector3(
-                    playerGroup.position.x,
-                    playerGroup.position.y + 6,
-                    playerGroup.position.z + 10
-                );
-                
-                camera.position.lerp(targetCameraPosition, 0.1);
-                camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z);
-            }
+                camera.position.set(playerGroup.position.x, playerGroup.position.y + 6, playerGroup.position.z + 10);
+                camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1.5, playerGroup.position.z);
 
-            function animate() {
-                requestAnimationFrame(animate);
-                updatePlayer();
                 renderer.render(scene, camera);
             }
-
-            window.addEventListener('resize', () => {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            });
-
             animate();
+
+            window.quitGame = function() {
+                cancelAnimationFrame(animId);
+                window.removeEventListener('keydown', onKeyDown);
+                window.removeEventListener('keyup', onKeyUp);
+                renderer.domElement.remove();
+                document.getElementById('game-canvas-container').style.display = 'none';
+                document.getElementById('main-dashboard').style.display = 'block';
+            };
         }
     </script>
 </body>
 </html>
-
