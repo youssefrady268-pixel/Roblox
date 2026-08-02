@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roblox-Style 3D Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: sans-serif;
+            background: #111;
+        }
+        #auth-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop') no-repeat center center;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .auth-box {
+            background: rgba(30, 30, 30, 0.95);
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+            width: 320px;
+            border: 1px solid #444;
+        }
+        .auth-box h2 {
+            margin-top: 0;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .auth-box input {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 12px;
+            border: 1px solid #555;
+            background: #222;
+            color: white;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .auth-box button {
+            background: #00b06f;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            transition: 0.2s;
+        }
+        .auth-box button:hover {
+            background: #008f5a;
+        }
+        .toggle-text {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #aaa;
+        }
+        .toggle-text span {
+            color: #00ff88;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 18px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 15px;
+            border-radius: 8px;
+            pointer-events: none;
+            display: none;
+            z-index: 10;
+        }
+        #player-name-display {
+            color: #00ff88;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="auth-screen">
+        <div class="auth-box" id="login-form">
+            <h2>تسجيل الدخول</h2>
+            <input type="text" id="login-username" placeholder="اسم اللاعب">
+            <input type="password" id="login-password" placeholder="كلمة المرور">
+            <button id="login-btn">دخول اللعبة</button>
+            <div class="toggle-text">معندكش حساب؟ <span id="go-to-signup">إنشاء حساب جديد</span></div>
+        </div>
+
+        <div class="auth-box" id="signup-form" style="display: none;">
+            <h2>إنشاء حساب جديد</h2>
+            <input type="text" id="signup-username" placeholder="اسم اللاعب الجديد">
+            <input type="password" id="signup-password" placeholder="كلمة المرور">
+            <button id="signup-btn">إنشاء الحساب والدخول</button>
+            <div class="toggle-text">عالمسجل حساب بالفعل؟ <span id="go-to-login">تسجيل الدخول</span></div>
+        </div>
+    </div>
+
+    <div id="ui">
+        <b>اللاعب: <span id="player-name-display"></span></b><br><br>
+        <b>التحكم:</b><br>
+        • الحركة: W, A, S, D<br>
+        • القفز: Space
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+
+        document.getElementById('go-to-signup').addEventListener('click', () => {
+            loginForm.style.display = 'none';
+            signupForm.style.display = 'block';
+        });
+
+        document.getElementById('go-to-login').addEventListener('click', () => {
+            signupForm.style.display = 'none';
+            loginForm.style.display = 'block';
+        });
+
+        document.getElementById('signup-btn').addEventListener('click', () => {
+            const username = document.getElementById('signup-username').value.trim();
+            const password = document.getElementById('signup-password').value.trim();
+
+            if (!username || !password) {
+                alert("يرجى ملء جميع الحقول!");
+                return;
+            }
+
+            if (localStorage.getItem('user_' + username)) {
+                alert("اسم المستخدم هذا موجود بالفعل، اختر اسماً آخر!");
+                return;
+            }
+
+            localStorage.setItem('user_' + username, password);
+            alert("تم إنشاء الحساب بنجاح!");
+            enterGame(username);
+        });
+
+        document.getElementById('login-btn').addEventListener('click', () => {
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            if (!username || !password) {
+                alert("يرجى ملء جميع الحقول!");
+                return;
+            }
+
+            const savedPassword = localStorage.getItem('user_' + username);
+
+            if (!savedPassword) {
+                alert("هذا الحساب غير موجود، يرجى إنشاء حساب جديد!");
+                return;
+            }
+
+            if (savedPassword !== password) {
+                alert("كلمة المرور غير صحيحة!");
+                return;
+            }
+
+            enterGame(username);
+        });
+
+        function enterGame(username) {
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('ui').style.display = 'block';
+            document.getElementById('player-name-display').innerText = username;
+            startGame();
+        }
+
+        function startGame() {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x87ceeb);
+
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            sunLight.position.set(20, 40, 20);
+            sunLight.castShadow = true;
+            scene.add(sunLight);
+
+            const floorGeometry = new THREE.PlaneGeometry(100, 100);
+            const floorMaterial = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            floor.receiveShadow = true;
+            scene.add(floor);
+
+            function createBox(x, y, z, width, height, depth, color) {
+                const geo = new THREE.BoxGeometry(width, height, depth);
+                const mat = new THREE.MeshLambertMaterial({ color: color });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(x, y, z);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+                scene.add(mesh);
+            }
+
+            createBox(0, 1.5, -10, 3, 3, 3, 0xff5722);
+            createBox(5, 2.5, -15, 4, 5, 4, 0x2196F3);
+            createBox(-6, 1, -8, 2, 2, 2, 0xFFEB3B);
+
+            const playerGroup = new THREE.Group();
+
+            const bodyGeo = new THREE.BoxGeometry(1, 1.5, 0.8);
+            const bodyMat = new THREE.MeshLambertMaterial({ color: 0x3F51B5 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 1.25;
+            body.castShadow = true;
+            playerGroup.add(body);
+
+            const headGeo = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+            const headMat = new THREE.MeshLambertMaterial({ color: 0xFFC107 });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 2.4;
+            head.castShadow = true;
+            playerGroup.add(head);
+
+            scene.add(playerGroup);
+
+            const keys = {};
+            const speed = 0.18;
+            let yVelocity = 0;
+            const gravity = -0.012;
+            let isGrounded = true;
+
+            window.addEventListener('keydown', (e) => keys[e.code] = true);
+            window.addEventListener('keyup', (e) => keys[e.code] = false);
+
+            function updatePlayer() {
+                let moveX = 0;
+                let moveZ = 0;
+
+                if (keys['KeyW'] || keys['ArrowUp']) moveZ -= 1;
+                if (keys['KeyS'] || keys['ArrowDown']) moveZ += 1;
+                if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
+                if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
+
+                if (moveX !== 0 || moveZ !== 0) {
+                    const angle = Math.atan2(moveX, moveZ);
+                    playerGroup.rotation.y = angle;
+                    playerGroup.translateZ(speed);
+                }
+
+                if (keys['Space'] && isGrounded) {
+                    yVelocity = 0.28;
+                    isGrounded = false;
+                }
+
+                playerGroup.position.y += yVelocity;
+                if (!isGrounded) {
+                    yVelocity += gravity;
+                }
+
+                if (playerGroup.position.y <= 0) {
+                    playerGroup.position.y = 0;
+                    yVelocity = 0;
+                    isGrounded = true;
+                }
+
+                const targetCameraPosition = new THREE.Vector3(
+                    playerGroup.position.x,
+                    playerGroup.position.y + 6,
+                    playerGroup.position.z + 10
+                );
+                
+                camera.position.lerp(targetCameraPosition, 0.1);
+                camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z);
+            }
+
+            function animate() {
+                requestAnimationFrame(animate);
+                updatePlayer();
+                renderer.render(scene, camera);
+            }
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+
+            animate();
+        }
+    </script>
+</body>
+</html>
+
