@@ -53,29 +53,15 @@
             position: absolute; bottom: 2px; right: 2px; border: 2px solid #232527;
         }
 
-        .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
-        .game-card {
-            background: #232527; border-radius: 8px; overflow: hidden; border: 1px solid #393b3d;
-            cursor: pointer; transition: 0.2s;
-        }
-        .game-card:hover { transform: translateY(-5px); border-color: #00a2ff; }
-        .game-thumb { height: 120px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 40px; background-color: #2b2b2b; }
-        .game-info { padding: 12px; }
-        .game-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
-        .game-players { font-size: 12px; color: #00e676; }
-
-        #game-view-container { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #000; z-index: 200; touch-action: none; 
-        }
-        #exit-game-btn {
-            position: absolute; top: 20px; right: 20px; z-index: 210;
-            background: #ff4444; color: white; border: none; padding: 10px 20px;
-            font-weight: bold; border-radius: 6px; cursor: pointer;
-        }
-        .unity-placeholder {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            text-align: center; color: #888; font-size: 20px;
+        .empty-maps-box {
+            background: #232527;
+            border: 2px dashed #393b3d;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            color: #888;
+            font-size: 16px;
+            margin-top: 15px;
         }
     </style>
 </head>
@@ -102,12 +88,126 @@
     <div id="main-dashboard">
         <header>
             <div class="logo">ROBLOX GLOBAL</div>
-            <div class="user-info">أهلاً بك، <span id="display-user"></span> 🌐</div>
+            <div class="user-info">مرحباً بك هنا، <span id="display-user"></span> 🌐</div>
         </header>
 
-        <div class="section-title">اللاعبون المتواجدون أونلاين في العالم (Global Online Players)</div>
-        <div class="global-players-container" id="online-players-list">
-            </div>
+        <div class="section-title">اللاعبون المتواجدون أونلاين في العالم</div>
+        <div class="global-players-container" id="online-players-list"></div>
 
-        <div class="section-title">المابات الجماعية (Unity
+        <div class="section-title">المابات</div>
+        <div class="empty-maps-box">
+            لا توجد مابات مضافة حالياً. (قيد التجهيز من Unity)
+        </div>
+    </div>
 
+    <script>
+        // البيانات الحقيقية الخاصة بمشروعك من فايربيس
+        const firebaseConfig = {
+            apiKey: "AIzaSyCbF2TjeJ35WXhcfcJl_8kPE3ME9z3ET2M",
+            authDomain: "com-example-myapplicatio-5fef3.firebaseapp.com",
+            databaseURL: "https://com-example-myapplicatio-5fef3-default-rtdb.firebaseio.com",
+            projectId: "com-example-myapplicatio-5fef3",
+            storageBucket: "com-example-myapplicatio-5fef3.firebasestorage.app",
+            messagingSenderId: "363463760434",
+            appId: "1:363463760434:web:095ed8eea647491d68fa2b"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let currentUser = "";
+
+        document.getElementById('go-to-signup').addEventListener('click', () => {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('signup-form').style.display = 'block';
+        });
+
+        document.getElementById('go-to-login').addEventListener('click', () => {
+            document.getElementById('signup-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+        });
+
+        // تسجيل حساب جديد
+        document.getElementById('signup-btn').addEventListener('click', () => {
+            const user = document.getElementById('signup-username').value.trim();
+            const pass = document.getElementById('signup-password').value.trim();
+            if (!user || !pass) return alert("الرجاء إدخال البيانات كاملة!");
+
+            db.ref('users/' + user).once('value')
+            .then((snapshot) => {
+                if (snapshot.exists()) {
+                    alert("هذا الاسم مستخدم بالفعل، اختر اسمًا آخر!");
+                } else {
+                    return db.ref('users/' + user).set({ password: pass });
+                }
+            })
+            .then(() => {
+                alert("تم إنشاء الحساب بنجاح!");
+                loginSuccess(user);
+            })
+            .catch((error) => {
+                alert("خطأ أثناء التسجيل: " + error.message);
+            });
+        });
+
+        // تسجيل الدخول
+        document.getElementById('login-btn').addEventListener('click', () => {
+            const user = document.getElementById('login-username').value.trim();
+            const pass = document.getElementById('login-password').value.trim();
+            if (!user || !pass) return alert("الرجاء إدخال البيانات!");
+
+            db.ref('users/' + user).once('value')
+            .then((snapshot) => {
+                if (!snapshot.exists()) {
+                    alert("اسم المستخدم هذا غير موجود في النظام!");
+                } else if (snapshot.val().password !== pass) {
+                    alert("كلمة المرور غير صحيحة!");
+                } else {
+                    loginSuccess(user);
+                }
+            })
+            .catch((error) => {
+                alert("خطأ في الاتصال: " + error.message);
+            });
+        });
+
+        function loginSuccess(user) {
+            currentUser = user;
+            document.getElementById('auth-screen').style.display = 'none';
+            document.getElementById('main-dashboard').style.display = 'block';
+            document.getElementById('display-user').innerText = user;
+
+            const onlineRef = db.ref('online_players/' + user);
+            onlineRef.set({ name: user, time: Date.now() });
+            onlineRef.onDisconnect().remove();
+
+            listenToOnlinePlayers();
+        }
+
+        function listenToOnlinePlayers() {
+            const container = document.getElementById('online-players-list');
+            db.ref('online_players').on('value', (snapshot) => {
+                container.innerHTML = "";
+                const players = snapshot.val();
+                if (!players) {
+                    container.innerHTML = `<div style="color: #888; padding: 10px;">لا يوجد لاعبين متواجدين حالياً</div>`;
+                    return;
+                }
+
+                Object.keys(players).forEach(pKey => {
+                    const playerObj = players[pKey];
+                    const card = document.createElement('div');
+                    card.className = 'player-card';
+                    card.innerHTML = `
+                        <div class="player-avatar">
+                            <div class="status-dot"></div>
+                        </div>
+                        <div>${playerObj.name}</div>
+                    `;
+                    container.appendChild(card);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
