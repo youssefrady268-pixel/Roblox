@@ -19,34 +19,35 @@
     .nav-bar { background: #1e1e1e; padding: 15px 25px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border: 1px solid #333; }
     .btn-studio { background: #28a745; margin-top: 15px; }
     .btn-studio:hover { background: #218838; }
-    .status-msg { margin-top: 10px; font-size: 13px; }
+    .status-msg { margin-top: 10px; font-size: 13px; color: #28a745; }
+    .badge { background: #17a2b8; padding: 3px 8px; border-radius: 4px; font-size: 12px; }
   </style>
 </head>
 <body>
 
-  <!-- شاشة تسجيل الدخول وإنشاء حساب -->
+  <!-- شاشة تسجيل الدخول (سيرفر محلي / عادي) -->
   <div id="login-card" class="card">
     <h2>Roblox Arab 🎮</h2>
+    <p style="color:#888; font-size:12px; margin-bottom:15px;">تسجيل دخول عادي (Local Server)</p>
     <input type="text" id="username" placeholder="اسم المستخدم">
     <input type="password" id="password" placeholder="كلمة المرور">
     
-    <button onclick="loginUser()">دخول اللعبة 🔓</button>
-    <button onclick="registerUser()" style="background: #6c757d;">إنشاء حساب جديد (Data Save) 💾</button>
+    <button onclick="localLogin()">دخول سريع 🔓</button>
     <div id="status" class="status-msg"></div>
   </div>
 
   <!-- شاشة الـ Home القائمة الرئيسية -->
   <div id="home-screen">
     <div class="nav-bar">
-      <h3>مرحباً بك يا <span id="user-display" style="color: #007acc;">لاعب</span> 👋</h3>
+      <h3>مرحباً بك يا <span id="user-display" style="color: #007acc;">لاعب</span> 👋 <span class="badge">Online via Firebase</span></h3>
       <button onclick="logout()" style="width: auto; padding: 8px 15px; background: #dc3545;">خروج</button>
     </div>
 
     <div class="card" style="width: 100%;">
       <h2>القائمة الرئيسية (Home)</h2>
-      <p style="color: #aaa; margin-bottom: 20px;">بيانات حسابك محفوظة أونلاين عبر الفايربيس 💾</p>
+      <p style="color: #aaa; margin-bottom: 20px;">الخدمات الأونلاين ونشر المابات متصلة بالـ Firebase 🌐</p>
       
-      <button style="margin-bottom: 10px;" onclick="alert('جاري دخول الماب الرئيسية...')">🎮 دخول الماب الرئيسية</button>
+      <button style="margin-bottom: 10px;" onclick="alert('جاري التحميل...')">🎮 دخول الماب الرئيسية</button>
       
       <!-- زرار الدخول على ماب الاستوديو (index.html) -->
       <button class="btn-studio" onclick="window.location.href='index.html'">🛠️ دخول ماب صانع المابات (Studio)</button>
@@ -54,88 +55,33 @@
   </div>
 
   <script>
-    // ربط الفايربيس لحفظ البيانات (Data Saving)
-    const DB_URL = "https://com-example-myapplication-5fe13-default-rtdb.firebaseio.com";
+    // 1️⃣ تسجيل الدخول العادي (Local / Normal Server)
+    function localLogin() {
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      const status = document.getElementById('status');
 
-    // التحقق من وجود حساب محفوظ تلقائياً
+      if (!user) {
+        status.style.color = "#dc3545";
+        status.innerText = "اكتب اسم المستخدم!";
+        return;
+      }
+
+      // حفظ جلسة الدخول محلياً على الجهاز فوراً
+      localStorage.setItem('localUser', user);
+      status.style.color = "#28a745";
+      status.innerText = "تم الدخول بنجاح!";
+      
+      setTimeout(() => showHomeScreen(user), 500);
+    }
+
+    // 2️⃣ فحص تسجيل الدخول عند الفتح
     window.onload = function() {
-      const savedUser = localStorage.getItem('activeUser');
+      const savedUser = localStorage.getItem('localUser');
       if (savedUser) {
         showHomeScreen(savedUser);
       }
     };
-
-    // إنشاء حساب جديد وحفظه أونلاين
-    async function registerUser() {
-      const user = document.getElementById('username').value.trim();
-      const pass = document.getElementById('password').value.trim();
-      const status = document.getElementById('status');
-
-      if (!user || !pass) {
-        status.style.color = "#dc3545";
-        status.innerText = "يرجى كتابة الاسم وكلمة المرور!";
-        return;
-      }
-
-      status.style.color = "#ffc107";
-      status.innerText = "جاري حفظ الحساب في الفايربيس...";
-
-      try {
-        // حفظ بيانات الحساب
-        const response = await fetch(`${DB_URL}/users/${user}.json`, {
-          method: 'PUT',
-          body: JSON.stringify({
-            username: user,
-            password: pass,
-            createdAt: Date.now()
-          })
-        });
-
-        if (response.ok) {
-          status.style.color = "#28a745";
-          status.innerText = "🎉 تم إنشاء الحساب وحفظ البيانات بنجاح!";
-          localStorage.setItem('activeUser', user);
-          setTimeout(() => showHomeScreen(user), 1000);
-        }
-      } catch (e) {
-        status.style.color = "#dc3545";
-        status.innerText = "خطأ في الاتصال بالسيرفر!";
-      }
-    }
-
-    // تسجيل الدخول والتحقق من الفايربيس
-    async function loginUser() {
-      const user = document.getElementById('username').value.trim();
-      const pass = document.getElementById('password').value.trim();
-      const status = document.getElementById('status');
-
-      if (!user || !pass) {
-        status.style.color = "#dc3545";
-        status.innerText = "اكتب البيانات بشكل صحيح!";
-        return;
-      }
-
-      status.style.color = "#ffc107";
-      status.innerText = "جاري التحقق من الحساب...";
-
-      try {
-        const response = await fetch(`${DB_URL}/users/${user}.json`);
-        const userData = await response.json();
-
-        if (userData && userData.password === pass) {
-          status.style.color = "#28a745";
-          status.innerText = "تم الدخول بنجاح!";
-          localStorage.setItem('activeUser', user);
-          setTimeout(() => showHomeScreen(user), 800);
-        } else {
-          status.style.color = "#dc3545";
-          status.innerText = "اسم المستخدم أو كلمة المرور خطأ!";
-        }
-      } catch (e) {
-        status.style.color = "#dc3545";
-        status.innerText = "خطأ في الاتصال بالشبكة!";
-      }
-    }
 
     function showHomeScreen(username) {
       document.getElementById('login-card').style.display = 'none';
@@ -144,7 +90,7 @@
     }
 
     function logout() {
-      localStorage.removeItem('activeUser');
+      localStorage.removeItem('localUser');
       document.getElementById('home-screen').style.display = 'none';
       document.getElementById('login-card').style.display = 'block';
       document.getElementById('status').innerText = '';
