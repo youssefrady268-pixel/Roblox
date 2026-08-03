@@ -3,23 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Roblox Platform</title>
+    <title>Roblox Global Platform</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
     <style>
         body {
-            margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #191919;
-            color: white;
-            overflow-x: hidden;
-            user-select: none;
-            -webkit-user-select: none;
+            margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #191919; color: white; overflow-x: hidden; user-select: none;
         }
         #auth-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: #111;
-            display: flex; justify-content: center; align-items: center;
-            z-index: 100;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #111; display: flex; justify-content: center; align-items: center; z-index: 100;
         }
         .auth-box {
             background: #232527; padding: 40px; border-radius: 12px;
@@ -32,8 +27,7 @@
         }
         .auth-box button {
             background: #00a2ff; color: white; border: none; padding: 12px;
-            font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%;
-            margin-top: 10px;
+            font-weight: bold; border-radius: 6px; cursor: pointer; width: 100%; margin-top: 10px;
         }
         .toggle-text { margin-top: 15px; font-size: 14px; color: #aaa; }
         .toggle-text span { color: #00a2ff; cursor: pointer; text-decoration: underline; }
@@ -48,18 +42,16 @@
 
         .section-title { font-size: 22px; margin-bottom: 15px; border-bottom: 2px solid #393b3d; padding-bottom: 5px; }
 
-        .friends-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-        .friends-controls input {
-            padding: 10px; border-radius: 6px; border: 1px solid #393b3d; background: #232527; color: white; flex: 1; min-width: 150px;
-        }
-        .friends-controls button { background: #00b06f; border: none; color: white; padding: 10px 15px; border-radius: 6px; cursor: pointer; }
-
-        .friends-container { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 30px; }
-        .friend-card {
+        .global-players-container { display: flex; gap: 15px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 30px; }
+        .player-card {
             background: #232527; padding: 15px; border-radius: 8px; text-align: center;
-            min-width: 100px; border: 1px solid #393b3d;
+            min-width: 110px; border: 1px solid #393b3d; position: relative;
         }
-        .friend-avatar { width: 50px; height: 50px; background: #00a2ff; border-radius: 50%; margin: 0 auto 10px; }
+        .player-avatar { width: 50px; height: 50px; background: #00a2ff; border-radius: 50%; margin: 0 auto 10px; position: relative; }
+        .status-dot {
+            width: 12px; height: 12px; border-radius: 50%; background: #00e676;
+            position: absolute; bottom: 2px; right: 2px; border: 2px solid #232527;
+        }
 
         .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
         .game-card {
@@ -67,431 +59,55 @@
             cursor: pointer; transition: 0.2s;
         }
         .game-card:hover { transform: translateY(-5px); border-color: #00a2ff; }
-        .game-thumb { height: 120px; background-size: cover; background-position: center; }
+        .game-thumb { height: 120px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 40px; background-color: #2b2b2b; }
         .game-info { padding: 12px; }
         .game-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; }
-        .game-players { font-size: 12px; color: #aaa; }
+        .game-players { font-size: 12px; color: #00e676; }
 
-        #game-canvas-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; touch-action: none; }
+        #game-view-container { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #000; z-index: 200; touch-action: none; 
+        }
         #exit-game-btn {
             position: absolute; top: 20px; right: 20px; z-index: 210;
             background: #ff4444; color: white; border: none; padding: 10px 20px;
             font-weight: bold; border-radius: 6px; cursor: pointer;
         }
-
-        /* تحكم الموبايل */
-        #joystick-zone {
-            position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px;
-            background: rgba(255, 255, 255, 0.2); border-radius: 50%; z-index: 210;
-            display: flex; justify-content: center; align-items: center; border: 2px solid rgba(255, 255, 255, 0.4);
+        .unity-placeholder {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; color: #888; font-size: 20px;
         }
-        #joystick-stick {
-            width: 50px; height: 50px; background: rgba(255, 255, 255, 0.6);
-            border-radius: 50%; position: absolute;
-        }
-        #jump-btn {
-            position: absolute; bottom: 40px; right: 40px; width: 80px; height: 80px;
-            background: rgba(255, 255, 255, 0.3); border-radius: 50%; z-index: 210;
-            display: flex; justify-content: center; align-items: center;
-            font-size: 24px; color: white; font-weight: bold; border: 2px solid rgba(255, 255, 255, 0.5);
-            touch-action: manipulation;
-        }
-        #jump-btn:active { background: rgba(255, 255, 255, 0.6); }
     </style>
 </head>
 <body>
 
     <div id="auth-screen">
         <div class="auth-box" id="login-form">
-            <h2>تسجيل الدخول</h2>
-            <input type="text" id="login-username" placeholder="اسم اللاعب">
+            <h2>تسجيل الدخول العام</h2>
+            <input type="text" id="login-username" placeholder="اسم المستخدم">
             <input type="password" id="login-password" placeholder="كلمة المرور">
-            <button id="login-btn">دخول</button>
-            <div class="toggle-text">معندكش حساب؟ <span id="go-to-signup">إنشاء حساب</span></div>
+            <button id="login-btn">دخول السيرفر</button>
+            <div class="toggle-text">معندكش حساب؟ <span id="go-to-signup">إنشاء حساب جديد</span></div>
         </div>
 
         <div class="auth-box" id="signup-form" style="display: none;">
-            <h2>إنشاء حساب جديد</h2>
-            <input type="text" id="signup-username" placeholder="اسم اللاعب الجديد">
+            <h2>حساب جديد أونلاين</h2>
+            <input type="text" id="signup-username" placeholder="اختر اسم فريد">
             <input type="password" id="signup-password" placeholder="كلمة المرور">
-            <button id="signup-btn">إنشاء الحساب</button>
+            <button id="signup-btn">تسجيل وانضمام</button>
             <div class="toggle-text">عندك حساب؟ <span id="go-to-login">تسجيل الدخول</span></div>
         </div>
     </div>
 
     <div id="main-dashboard">
         <header>
-            <div class="logo">ROBLOX CLONE</div>
-            <div class="user-info">مرحباً، <span id="display-user"></span> 👋</div>
+            <div class="logo">ROBLOX GLOBAL</div>
+            <div class="user-info">أهلاً بك، <span id="display-user"></span> 🌐</div>
         </header>
 
-        <div class="section-title">الأصدقاء (Friends)</div>
-        <div class="friends-controls">
-            <input type="text" id="friend-input" placeholder="اكتب اسم الصديق للإضافة...">
-            <button id="add-friend-btn">إضافة صديق</button>
-            <input type="text" id="search-friend-input" placeholder="🔍 ابحث في قائمة أصدقائك..." style="background: #111;">
-        </div>
-        <div class="friends-container" id="friends-list"></div>
-
-        <div class="section-title">المابات (Games)</div>
-        <div class="games-grid">
-            <div class="game-card" onclick="launchGame('garden')">
-                <div class="game-thumb" style="background-color: #2e7d32;"></div>
-                <div class="game-info">
-                    <div class="game-title">🌱 Grow a Garden</div>
-                    <div class="game-players">👥 1,250 يلعبون الآن</div>
-                </div>
+        <div class="section-title">اللاعبون المتواجدون أونلاين في العالم (Global Online Players)</div>
+        <div class="global-players-container" id="online-players-list">
             </div>
 
-            <div class="game-card" onclick="launchGame('obby')">
-                <div class="game-thumb" style="background-color: #d84315;"></div>
-                <div class="game-info">
-                    <div class="game-title">🏃 Obby Parkour</div>
-                    <div class="game-players">👥 840 يلعبون الآن</div>
-                </div>
-            </div>
-        </div>
-    </div>
+        <div class="section-title">المابات الجماعية (Unity
 
-    <div id="game-canvas-container">
-        <button id="exit-game-btn" onclick="quitGame()">خروج من الماب ✕</button>
-        <div id="joystick-zone"><div id="joystick-stick"></div></div>
-        <div id="jump-btn">⬆</div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-    <script>
-        let currentUser = "";
-        let currentRenderer = null;
-
-        document.getElementById('go-to-signup').addEventListener('click', () => {
-            document.getElementById('login-form').style.display = 'none';
-            document.getElementById('signup-form').style.display = 'block';
-        });
-
-        document.getElementById('go-to-login').addEventListener('click', () => {
-            document.getElementById('signup-form').style.display = 'none';
-            document.getElementById('login-form').style.display = 'block';
-        });
-
-        document.getElementById('signup-btn').addEventListener('click', () => {
-            const user = document.getElementById('signup-username').value.trim();
-            const pass = document.getElementById('signup-password').value.trim();
-            if (!user || !pass) return alert("املأ البيانات!");
-            if (localStorage.getItem('user_' + user)) return alert("الاسم موجود بالفعل!");
-            
-            localStorage.setItem('user_' + user, pass);
-            loadDashboard(user);
-        });
-
-        document.getElementById('login-btn').addEventListener('click', () => {
-            const user = document.getElementById('login-username').value.trim();
-            const pass = document.getElementById('login-password').value.trim();
-            const savedPass = localStorage.getItem('user_' + user);
-
-            if (!savedPass || savedPass !== pass) return alert("البيانات غير صحيحة!");
-            loadDashboard(user);
-        });
-
-        function loadDashboard(user) {
-            currentUser = user;
-            document.getElementById('auth-screen').style.display = 'none';
-            document.getElementById('main-dashboard').style.display = 'block';
-            document.getElementById('display-user').innerText = user;
-            renderFriends();
-        }
-
-        document.getElementById('add-friend-btn').addEventListener('click', () => {
-            const friendName = document.getElementById('friend-input').value.trim();
-            if (!friendName) return;
-
-            let friends = JSON.parse(localStorage.getItem('friends_' + currentUser) || "[]");
-            if (!friends.includes(friendName)) {
-                friends.push(friendName);
-                localStorage.setItem('friends_' + currentUser, JSON.stringify(friends));
-                renderFriends();
-            }
-            document.getElementById('friend-input').value = "";
-        });
-
-        document.getElementById('search-friend-input').addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            renderFriends(query);
-        });
-
-        function renderFriends(filter = "") {
-            const container = document.getElementById('friends-list');
-            container.innerHTML = "";
-            let friends = JSON.parse(localStorage.getItem('friends_' + currentUser) || "[]");
-
-            const filteredFriends = friends.filter(friend => friend.toLowerCase().includes(filter));
-
-            if (filteredFriends.length === 0) {
-                container.innerHTML = `<div style="color: #888; padding: 10px;">لا يوجد أصدقاء بهذا الاسم</div>`;
-                return;
-            }
-
-            filteredFriends.forEach(friend => {
-                const card = document.createElement('div');
-                card.className = 'friend-card';
-                card.innerHTML = `<div class="friend-avatar"></div><div>${friend}</div>`;
-                container.appendChild(card);
-            });
-        }
-
-        function launchGame(mapType) {
-            document.getElementById('main-dashboard').style.display = 'none';
-            const container = document.getElementById('game-canvas-container');
-            container.style.display = 'block';
-
-            const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb);
-
-            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.shadowMap.enabled = true;
-            container.appendChild(renderer.domElement);
-            currentRenderer = renderer;
-
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-            scene.add(ambientLight);
-
-            const sunLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            sunLight.position.set(30, 50, 30);
-            sunLight.castShadow = true;
-            scene.add(sunLight);
-
-            function createBox(x, y, z, w, h, d, color, parent = scene) {
-                const geo = new THREE.BoxGeometry(w, h, d);
-                const mat = new THREE.MeshLambertMaterial({ color: color });
-                const mesh = new THREE.Mesh(geo, mat);
-                mesh.position.set(x, y, z);
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
-                parent.add(mesh);
-                return mesh;
-            }
-
-            if (mapType === 'garden') {
-                const floorGeo = new THREE.PlaneGeometry(120, 120);
-                const floorMat = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
-                const floor = new THREE.Mesh(floorGeo, floorMat);
-                floor.rotation.x = -Math.PI / 2;
-                floor.receiveShadow = true;
-                scene.add(floor);
-
-                createBox(0, 3, -15, 8, 6, 8, 0x8d6e63);
-                createBox(0, 7, -15, 10, 3, 10, 0xd32f2f);
-
-                const treePositions = [[-10, -10], [12, -8], [-15, 15], [15, 20], [-8, -25]];
-                treePositions.forEach(pos => {
-                    createBox(pos[0], 2, pos[1], 1.2, 4, 1.2, 0x5d4037);
-                    createBox(pos[0], 5, pos[1], 4, 4, 4, 0x2e7d32);
-                });
-
-                for (let i = -10; i <= 10; i += 4) {
-                    createBox(i, 0.2, -5, 2, 0.4, 2, 0xffb300);
-                    createBox(i, 0.2, 5, 2, 0.4, 2, 0xe91e63);
-                }
-
-            } else if (mapType === 'obby') {
-                scene.background = new THREE.Color(0x212121);
-
-                const floorGeo = new THREE.PlaneGeometry(200, 200);
-                const floorMat = new THREE.MeshLambertMaterial({ color: 0xd32f2f });
-                const floor = new THREE.Mesh(floorGeo, floorMat);
-                floor.rotation.x = -Math.PI / 2;
-                floor.position.y = -5;
-                scene.add(floor);
-
-                createBox(0, 0, 0, 6, 1, 6, 0x4caf50);
-
-                const obbyPlatforms = [
-                    [0, 1, -8, 4, 1, 4, 0x00bcd4],
-                    [3, 2, -16, 4, 1, 4, 0xffeb3b],
-                    [-2, 3.5, -24, 4, 1, 4, 0xe91e63],
-                    [2, 5, -32, 4, 1, 4, 0x9c27b0],
-                    [0, 7, -42, 8, 1, 8, 0x4caf50]
-                ];
-
-                obbyPlatforms.forEach(p => {
-                    createBox(p[0], p[1], p[2], p[3], p[4], p[5], p[6]);
-                });
-            }
-
-            // === تصميم شخصية اللاعب المطلوبة بنفس تفاصيل الصورة ===
-            const playerGroup = new THREE.Group();
-
-            // 1. الجسم / الكنزة الكحلي (Dark Blue Shirt)
-            createBox(0, 1.25, 0, 1.1, 1.3, 0.6, 0x1A237E, playerGroup);
-
-            // طباعة الصورة على الصدر (Print on shirt)
-            createBox(0, 1.3, 0.31, 0.6, 0.6, 0.02, 0x80CBC4, playerGroup);
-
-            // 2. الرأس وبشرة الوجه (Skin Head)
-            createBox(0, 2.3, 0, 0.85, 0.85, 0.85, 0xFFE0B2, playerGroup);
-
-            // 3. الشعر الأحمر السبايكي (Spiky Red Hair)
-            createBox(0, 2.8, 0.05, 0.9, 0.25, 0.9, 0x8D1B1B, playerGroup); // قاعدة الشعر
-            createBox(0.1, 3.0, -0.1, 0.4, 0.3, 0.5, 0xB71C1C, playerGroup); // السبايك الأمامي
-            createBox(-0.15, 2.95, 0.1, 0.4, 0.25, 0.4, 0x990000, playerGroup);
-
-            // 4. النظارة البنية (Brown Glasses)
-            createBox(0, 2.35, 0.44, 0.75, 0.22, 0.05, 0x4E342E, playerGroup); // إطار النظارة
-            createBox(0, 2.35, 0.45, 0.65, 0.15, 0.05, 0xFFFFFF, playerGroup); // العدسات
-
-            // 5. الأذرع (Arms)
-            createBox(-0.75, 1.25, 0, 0.35, 1.2, 0.45, 0x1A237E, playerGroup); // ذراع شمال
-            createBox(-0.75, 0.45, 0, 0.33, 0.4, 0.42, 0xFFE0B2, playerGroup); // يد شمال
-
-            createBox(0.75, 1.25, 0, 0.35, 1.2, 0.45, 0x1A237E, playerGroup);  // ذراع يمين
-            createBox(0.75, 0.45, 0, 0.33, 0.4, 0.42, 0xFFE0B2, playerGroup);  // يد يمين
-
-            // 6. البنطلون الجينز الغامق (Jeans Pants)
-            createBox(-0.28, 0.35, 0, 0.45, 0.9, 0.5, 0x1565C0, playerGroup); // رجل شمال
-            createBox(0.28, 0.35, 0, 0.45, 0.9, 0.5, 0x1565C0, playerGroup);  // رجل يمين
-
-            // 7. الحذاء الأحمر والأبيض (Red & White Sneakers)
-            createBox(-0.28, -0.15, 0.05, 0.47, 0.25, 0.6, 0xB71C1C, playerGroup); // حذاء أحمر شمال
-            createBox(-0.28, -0.22, 0.1, 0.48, 0.1, 0.5, 0xFFFFFF, playerGroup);   // مقدمة بيضاء
-            
-            createBox(0.28, -0.15, 0.05, 0.47, 0.25, 0.6, 0xB71C1C, playerGroup);  // حذاء أحمر يمين
-            createBox(0.28, -0.22, 0.1, 0.48, 0.1, 0.5, 0xFFFFFF, playerGroup);    // مقدمة بيضاء
-
-            playerGroup.position.set(0, 0.5, 0);
-            scene.add(playerGroup);
-
-            const keys = {};
-            let touchMoveX = 0, touchMoveZ = 0;
-            let jumpPressed = false;
-
-            const speed = 0.18;
-            let yVelocity = 0;
-            const gravity = -0.012;
-            let isGrounded = true;
-
-            const onKeyDown = (e) => keys[e.code] = true;
-            const onKeyUp = (e) => keys[e.code] = false;
-            window.addEventListener('keydown', onKeyDown);
-            window.addEventListener('keyup', onKeyUp);
-
-            // إعداد الجويستيك للموبايل
-            const zone = document.getElementById('joystick-zone');
-            const stick = document.getElementById('joystick-stick');
-            const jumpBtn = document.getElementById('jump-btn');
-
-            let touchId = null;
-            let center = { x: 0, y: 0 };
-
-            zone.addEventListener('touchstart', (e) => {
-                const touch = e.changedTouches[0];
-                touchId = touch.identifier;
-                const rect = zone.getBoundingClientRect();
-                center = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-                updateJoystick(touch);
-            });
-
-            zone.addEventListener('touchmove', (e) => {
-                for (let touch of e.changedTouches) {
-                    if (touch.identifier === touchId) {
-                        updateJoystick(touch);
-                    }
-                }
-            });
-
-            const resetJoystick = (e) => {
-                for (let touch of e.changedTouches) {
-                    if (touch.identifier === touchId) {
-                        touchId = null;
-                        stick.style.transform = `translate(0px, 0px)`;
-                        touchMoveX = 0;
-                        touchMoveZ = 0;
-                    }
-                }
-            };
-
-            zone.addEventListener('touchend', resetJoystick);
-            zone.addEventListener('touchcancel', resetJoystick);
-
-            function updateJoystick(touch) {
-                const dx = touch.clientX - center.x;
-                const dy = touch.clientY - center.y;
-                const dist = Math.min(Math.hypot(dx, dy), 40);
-                const angle = Math.atan2(dy, dx);
-                
-                const moveX = Math.cos(angle) * dist;
-                const moveY = Math.sin(angle) * dist;
-
-                stick.style.transform = `translate(${moveX}px, ${moveY}px)`;
-
-                touchMoveX = moveX / 40;
-                touchMoveZ = moveY / 40;
-            }
-
-            jumpBtn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                jumpPressed = true;
-            });
-
-            let animId;
-            function animate() {
-                animId = requestAnimationFrame(animate);
-
-                let moveX = 0, moveZ = 0;
-                if (keys['KeyW'] || keys['ArrowUp']) moveZ -= 1;
-                if (keys['KeyS'] || keys['ArrowDown']) moveZ += 1;
-                if (keys['KeyA'] || keys['ArrowLeft']) moveX -= 1;
-                if (keys['KeyD'] || keys['ArrowRight']) moveX += 1;
-
-                if (touchMoveX !== 0 || touchMoveZ !== 0) {
-                    moveX = touchMoveX;
-                    moveZ = touchMoveZ;
-                }
-
-                if (moveX !== 0 || moveZ !== 0) {
-                    playerGroup.rotation.y = Math.atan2(moveX, moveZ);
-                    playerGroup.translateZ(speed);
-                }
-
-                if ((keys['Space'] || jumpPressed) && isGrounded) {
-                    yVelocity = 0.28;
-                    isGrounded = false;
-                    jumpPressed = false;
-                }
-
-                playerGroup.position.y += yVelocity;
-                if (!isGrounded) yVelocity += gravity;
-
-                let minHeight = (mapType === 'obby') ? -4 : 0;
-                if (playerGroup.position.y <= minHeight) {
-                    if (mapType === 'obby') {
-                        playerGroup.position.set(0, 1, 0);
-                        yVelocity = 0;
-                    } else {
-                        playerGroup.position.y = 0;
-                        yVelocity = 0;
-                        isGrounded = true;
-                    }
-                }
-
-                camera.position.set(playerGroup.position.x, playerGroup.position.y + 6, playerGroup.position.z + 10);
-                camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1.5, playerGroup.position.z);
-
-                renderer.render(scene, camera);
-            }
-            animate();
-
-            window.quitGame = function() {
-                cancelAnimationFrame(animId);
-                window.removeEventListener('keydown', onKeyDown);
-                window.removeEventListener('keyup', onKeyUp);
-                renderer.domElement.remove();
-                document.getElementById('game-canvas-container').style.display = 'none';
-                document.getElementById('main-dashboard').style.display = 'block';
-            };
-        }
-    </script>
-</body>
-</html>
