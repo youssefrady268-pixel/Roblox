@@ -1,0 +1,133 @@
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+let variables = {};
+
+async function runScript() {
+const code = document.getElementById('code-editor').value;
+const lines = code.split('\n');
+const consoleBox = document.getElementById('console-output');
+if (consoleBox) consoleBox.innerHTML = '';
+variables = {}; 
+
+for (let i = 0; i < lines.length; i++) {
+let line = lines[i].trim();
+if (!line || line.startsWith('--') || line.startsWith('//')) continue;
+
+// 1. المتغيرات (عرف س = 5)
+if (line.startsWith('عرف')) {
+const parts = line.replace('عرف', '').split('=');
+if (parts.length === 2) {
+const varName = parts[0].trim();
+const varVal = parts[1].trim();
+variables[varName] = isNaN(parseFloat(varVal)) ? varVal : parseFloat(varVal);
+}
+}
+
+// 2. أمر الطباعة الشامل
+if (line.startsWith('اطبع')) {
+let rawVal = getArg(line);
+let printVal = (variables[rawVal] !== undefined) ? variables[rawVal] : rawVal;
+if (consoleBox) consoleBox.innerHTML += `<div>> ${printVal}</div>`;
+}
+
+if (line.startsWith('استنى')) {
+const sec = parseFloat(getArg(line)) || 1;
+await sleep(sec * 1000);
+}
+
+// 3. صناعة البارت والمجسمات (Part Creation)
+if (line.startsWith('صنع_بارت') || line.startsWith('صنع_مكعب')) createShape('box', getArg(line));
+if (line.startsWith('صنع_كورة')) createShape('sphere', getArg(line));
+if (line.startsWith('صنع_أسطوانة') || line.startsWith('صنع_سلندر')) createShape('cylinder', getArg(line));
+if (line.startsWith('صنع_بلاطة') || line.startsWith('صنع_أرضية')) createShape('plane', getArg(line));
+if (line === 'مسح_الكل') clearAllObjects();
+
+// 4. الخصائص الهندسية المتقدمة (Position & Size)
+// مثال: تغيير_الموقع(0, 5, -2)
+if (line.startsWith('تغيير_الموقع') || line.startsWith('البوزيشن')) {
+const coords = getArg(line).split(',').map(n => parseFloat(n.trim()));
+if (coords.length === 3 && currentCube) {
+currentCube.position.set(coords[0], coords[1], coords[2]);
+}
+}
+
+// مثال: تغيير_الأبعاد(2, 0.5, 4)
+if (line.startsWith('تغيير_الأبعاد') || line.startsWith('السايز')) {
+const sizes = getArg(line).split(',').map(n => parseFloat(n.trim()));
+if (sizes.length === 3 && currentCube) {
+currentCube.scale.set(sizes[0], sizes[1], sizes[2]);
+}
+}
+
+// 5. خصائص الفيزياء والريندر (Anchored & CanCollide & Transparency)
+if (line.startsWith('تثبيت')) {
+if (currentCube) currentCube.userData.anchored = true;
+}
+if (line.startsWith('إلغاء_التثبيت')) {
+if (currentCube) currentCube.userData.anchored = false;
+}
+
+if (line.startsWith('الشفافية')) {
+const trans = parseFloat(getArg(line)) || 0;
+if (currentCube && currentCube.material) {
+currentCube.material.transparent = true;
+currentCube.material.opacity = 1 - trans;
+}
+}
+
+if (line.startsWith('إخفاء')) { if (currentCube) currentCube.visible = false; }
+if (line.startsWith('إظهار')) { if (currentCube) currentCube.visible = true; }
+
+// 6. التحريك المباشر والدوران
+if (line.startsWith('تحريك_يمين')) moveObj(parseFloat(getArg(line)) || 1, 0, 0);
+if (line.startsWith('تحريك_شمال')) moveObj(-(parseFloat(getArg(line)) || 1), 0, 0);
+if (line.startsWith('تحريك_فوق')) moveObj(0, parseFloat(getArg(line)) || 1, 0);
+if (line.startsWith('تحريك_تحت')) moveObj(0, -(parseFloat(getArg(line)) || 1), 0);
+if (line.startsWith('تحريك_قدام')) moveObj(0, 0, -(parseFloat(getArg(line)) || 1));
+if (line.startsWith('تحريك_ورا')) moveObj(0, 0, parseFloat(getArg(line)) || 1);
+
+if (line.startsWith('تدوير_x')) rotateObj(parseFloat(getArg(line)) || 45, 'x');
+if (line.startsWith('تدوير_y') || line.startsWith('تدوير')) rotateObj(parseFloat(getArg(line)) || 45, 'y');
+if (line.startsWith('تدوير_z')) rotateObj(parseFloat(getArg(line)) || 45, 'z');
+
+// 7. الأصوات والتكرار
+if (line.startsWith('شغل_صوت')) {
+const ctx = new (window.AudioContext || window.webkitAudioContext)();
+const osc = ctx.createOscillator();
+osc.connect(ctx.destination);
+osc.start();
+osc.stop(ctx.currentTime + 0.2);
+}
+
+if (line.startsWith('كرر')) {
+const count = parseInt(getArg(line)) || 1;
+let nextLine = lines[i + 1];
+if (nextLine) {
+for (let c = 0; c < count - 1; c++) {
+lines.splice(i + 1, 0, nextLine);
+}
+}
+}
+}
+}
+
+function getArg(line) {
+const match = line.match(/\((.*?)\)/);
+return match ? match[1] : '';
+}
+
+function moveObj(x, y, z) {
+if (currentCube) {
+currentCube.position.x += x;
+currentCube.position.y += y;
+currentCube.position.z += z;
+}
+}
+
+function rotateObj(deg, axis) {
+if (currentCube) {
+const rad = (deg * Math.PI) / 180;
+if (axis === 'x') currentCube.rotation.x += rad;
+if (axis === 'y') currentCube.rotation.y += rad;
+if (axis === 'z') currentCube.rotation.z += rad;
+}
+}

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>روبلوكس العرب - منصة الألعاب</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+body { background-color: #1a1a1a; color: white; height: 100vh; overflow: hidden; }
+
+/* القائمة الرئيسية */
+#main-menu { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: linear-gradient(135deg, #111, #222); }
+#main-menu h1 { font-size: 3rem; margin-bottom: 20px; color: #007acc; }
+.menu-btns { display: flex; gap: 15px; margin-bottom: 30px; }
+.menu-btn { padding: 12px 25px; font-size: 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; background: #007acc; color: white; transition: 0.2s; }
+.menu-btn:hover { background: #005999; transform: scale(1.05); }
+
+/* قائمة المابات المنشورة */
+.maps-container { width: 80%; max-width: 600px; background: #252526; padding: 20px; border-radius: 10px; border: 1px solid #444; max-height: 300px; overflow-y: auto; }
+.map-card { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 10px 15px; border-radius: 6px; margin-bottom: 10px; }
+.play-btn { background: #28a745; color: white; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+
+/* شاشة الاستوديو */
+#studio-screen { display: none; flex-direction: column; height: 100vh; }
+header { height: 45px; background-color: #252526; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; border-bottom: 1px solid #3c3c3c; }
+.toolbar { display: flex; gap: 8px; }
+.tool-btn { background-color: #333; color: #fff; border: 1px solid #555; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+.tool-btn.publish { background-color: #28a745; border-color: #28a745; }
+.tool-btn.exit { background-color: #dc3545; border-color: #dc3545; }
+
+.main-container { display: flex; flex: 1; height: calc(100vh - 45px); }
+.sidebar { width: 240px; background-color: #252526; border-left: 1px solid #3c3c3c; display: flex; flex-direction: column; }
+.panel { flex: 1; padding: 10px; border-bottom: 1px solid #3c3c3c; overflow-y: auto; }
+.panel h4 { margin-bottom: 8px; color: #007acc; font-size: 13px; border-bottom: 1px solid #444; padding-bottom: 4px; }
+
+#explorer-tree { font-size: 13px; font-family: monospace; }
+.tree-folder { font-weight: bold; color: #ffd700; margin-top: 6px; margin-bottom: 3px; }
+.tree-item { padding: 4px 12px; cursor: pointer; border-radius: 3px; margin-bottom: 2px; background: #2d2d2d; color: #ddd; }
+.tree-item.selected { background-color: #094771; color: white; }
+
+.prop-group { margin-bottom: 8px; font-size: 12px; }
+.prop-group label { display: block; margin-bottom: 3px; color: #aaa; }
+.prop-group input, .prop-group select { width: 100%; padding: 5px; background: #1e1e1e; border: 1px solid #444; color: white; border-radius: 3px; }
+
+#viewport { flex: 2; background-color: #111; position: relative; }
+.editor-container { flex: 1; background-color: #252526; display: flex; flex-direction: column; border-right: 1px solid #3c3c3c; padding: 10px; }
+#code-editor { flex: 2; background-color: #1e1e1e; color: #d4d4d4; border: 1px solid #3c3c3c; border-radius: 6px; padding: 10px; font-size: 13px; resize: none; outline: none; }
+#console-output { flex: 1; margin-top: 8px; background-color: #111; border: 1px solid #3c3c3c; border-radius: 6px; padding: 8px; font-family: monospace; color: #4ec9b0; overflow-y: auto; font-size: 12px; }
+.btn-run { margin-top: 8px; padding: 8px; background-color: #0e639c; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<!-- 1. الشاشة الرئيسية للعبة -->
+<div id="main-menu">
+  <h1>🎮 منصة ألعاب روبلوكس</h1>
+  <div class="menu-btns">
+    <button class="menu-btn" onclick="openStudio()">🛠️ دخول الاستوديو (صنع ماب)</button>
+  </div>
+
+  <h2>🌐 المابات المنشورة:</h2>
+  <div class="maps-container" id="published-maps-list">
+    <p style="text-align:center; color:#aaa;">لا توجد مابات منشورة بعد..</p>
+  </div>
+</div>
+
+<!-- 2. شاشة الاستوديو -->
+<div id="studio-screen">
+  <header>
+    <h2>محرك Studio</h2>
+    <div class="toolbar">
+      <button class="tool-btn" onclick="createShape('box', 'ازرق')">➕ إضافة Part</button>
+      <button class="tool-btn" onclick="addScriptToService()">📜 إضافة Script</button>
+      <button class="tool-btn" onclick="moveSelected(0, 1, 0)">⬆️ رفع</button>
+      <button class="tool-btn" onclick="scaleSelected(1.2)">📐 تكبير</button>
+      <button class="tool-btn" onclick="scaleSelected(0.8)">📐 تصغير</button>
+      <button class="tool-btn" onclick="rotateSelected(45)">🔄 تدوير</button>
+      <button class="tool-btn publish" onclick="publishMap()">🚀 نشر الماب (Publish)</button>
+      <button class="tool-btn exit" onclick="exitToMenu()">❌ خروج للرئيسية</button>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div class="sidebar">
+      <div class="panel">
+        <h4>📁 Explorer</h4>
+        <div id="explorer-tree">
+          <div class="tree-folder">📂 Workspace</div>
+          <div id="workspace-list"></div>
+          <div class="tree-folder">📂 ServerScriptService</div>
+          <div id="scriptservice-list"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h4>⚙️ Properties</h4>
+        <div class="prop-group">
+          <label>الاسم (Name):</label>
+          <input type="text" id="prop-name" onchange="updateSelectedProp('name', this.value)">
+        </div>
+        <div class="prop-group">
+          <label>اللون (Color):</label>
+          <select id="prop-color" onchange="updateSelectedProp('color', this.value)">
+            <option value="ازرق">أزرق</option>
+            <option value="احمر">أحمر</option>
+            <option value="اخضر">أخضر</option>
+            <option value="اصفر">أصفر</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="viewport"></div>
+
+    <div class="editor-container">
+      <h4>📜 Script Editor:</h4>
+      <textarea id="code-editor" placeholder="اكتب سكريبت المحرك هنا..."></textarea>
+      <button class="btn-run" onclick="runScript()">▶ تشغيل التجربة</button>
+      <div id="console-output"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="builder.js"></script>
+<script src="arabscript.js"></script>
+</body>
+</html>
