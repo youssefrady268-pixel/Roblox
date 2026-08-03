@@ -1,1 +1,154 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Roblox Arab - اللعبة الرئيسية</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #121212; color: #ffffff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+    
+    .card { background-color: #1e1e1e; border: 1px solid #333; border-radius: 12px; padding: 30px; width: 360px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); text-align: center; }
+    h2 { margin-bottom: 20px; color: #007acc; }
+    input { width: 100%; padding: 12px; margin-bottom: 15px; background: #2a2a2a; border: 1px solid #444; border-radius: 6px; color: white; outline: none; }
+    input:focus { border-color: #007acc; }
+    button { width: 100%; padding: 12px; background: #007acc; border: none; border-radius: 6px; color: white; font-weight: bold; font-size: 15px; cursor: pointer; transition: 0.2s; margin-bottom: 8px; }
+    button:hover { background: #005999; }
+    
+    #home-screen { display: none; text-align: center; width: 100%; max-width: 800px; padding: 20px; }
+    .nav-bar { background: #1e1e1e; padding: 15px 25px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border: 1px solid #333; }
+    .btn-studio { background: #28a745; margin-top: 15px; }
+    .btn-studio:hover { background: #218838; }
+    .status-msg { margin-top: 10px; font-size: 13px; }
+  </style>
+</head>
+<body>
 
+  <!-- شاشة تسجيل الدخول وإنشاء حساب -->
+  <div id="login-card" class="card">
+    <h2>Roblox Arab 🎮</h2>
+    <input type="text" id="username" placeholder="اسم المستخدم">
+    <input type="password" id="password" placeholder="كلمة المرور">
+    
+    <button onclick="loginUser()">دخول اللعبة 🔓</button>
+    <button onclick="registerUser()" style="background: #6c757d;">إنشاء حساب جديد (Data Save) 💾</button>
+    <div id="status" class="status-msg"></div>
+  </div>
+
+  <!-- شاشة الـ Home القائمة الرئيسية -->
+  <div id="home-screen">
+    <div class="nav-bar">
+      <h3>مرحباً بك يا <span id="user-display" style="color: #007acc;">لاعب</span> 👋</h3>
+      <button onclick="logout()" style="width: auto; padding: 8px 15px; background: #dc3545;">خروج</button>
+    </div>
+
+    <div class="card" style="width: 100%;">
+      <h2>القائمة الرئيسية (Home)</h2>
+      <p style="color: #aaa; margin-bottom: 20px;">بيانات حسابك محفوظة أونلاين عبر الفايربيس 💾</p>
+      
+      <button style="margin-bottom: 10px;" onclick="alert('جاري دخول الماب الرئيسية...')">🎮 دخول الماب الرئيسية</button>
+      
+      <!-- زرار الدخول على ماب الاستوديو (index.html) -->
+      <button class="btn-studio" onclick="window.location.href='index.html'">🛠️ دخول ماب صانع المابات (Studio)</button>
+    </div>
+  </div>
+
+  <script>
+    // ربط الفايربيس لحفظ البيانات (Data Saving)
+    const DB_URL = "https://com-example-myapplication-5fe13-default-rtdb.firebaseio.com";
+
+    // التحقق من وجود حساب محفوظ تلقائياً
+    window.onload = function() {
+      const savedUser = localStorage.getItem('activeUser');
+      if (savedUser) {
+        showHomeScreen(savedUser);
+      }
+    };
+
+    // إنشاء حساب جديد وحفظه أونلاين
+    async function registerUser() {
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      const status = document.getElementById('status');
+
+      if (!user || !pass) {
+        status.style.color = "#dc3545";
+        status.innerText = "يرجى كتابة الاسم وكلمة المرور!";
+        return;
+      }
+
+      status.style.color = "#ffc107";
+      status.innerText = "جاري حفظ الحساب في الفايربيس...";
+
+      try {
+        // حفظ بيانات الحساب
+        const response = await fetch(`${DB_URL}/users/${user}.json`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            username: user,
+            password: pass,
+            createdAt: Date.now()
+          })
+        });
+
+        if (response.ok) {
+          status.style.color = "#28a745";
+          status.innerText = "🎉 تم إنشاء الحساب وحفظ البيانات بنجاح!";
+          localStorage.setItem('activeUser', user);
+          setTimeout(() => showHomeScreen(user), 1000);
+        }
+      } catch (e) {
+        status.style.color = "#dc3545";
+        status.innerText = "خطأ في الاتصال بالسيرفر!";
+      }
+    }
+
+    // تسجيل الدخول والتحقق من الفايربيس
+    async function loginUser() {
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      const status = document.getElementById('status');
+
+      if (!user || !pass) {
+        status.style.color = "#dc3545";
+        status.innerText = "اكتب البيانات بشكل صحيح!";
+        return;
+      }
+
+      status.style.color = "#ffc107";
+      status.innerText = "جاري التحقق من الحساب...";
+
+      try {
+        const response = await fetch(`${DB_URL}/users/${user}.json`);
+        const userData = await response.json();
+
+        if (userData && userData.password === pass) {
+          status.style.color = "#28a745";
+          status.innerText = "تم الدخول بنجاح!";
+          localStorage.setItem('activeUser', user);
+          setTimeout(() => showHomeScreen(user), 800);
+        } else {
+          status.style.color = "#dc3545";
+          status.innerText = "اسم المستخدم أو كلمة المرور خطأ!";
+        }
+      } catch (e) {
+        status.style.color = "#dc3545";
+        status.innerText = "خطأ في الاتصال بالشبكة!";
+      }
+    }
+
+    function showHomeScreen(username) {
+      document.getElementById('login-card').style.display = 'none';
+      document.getElementById('home-screen').style.display = 'block';
+      document.getElementById('user-display').innerText = username;
+    }
+
+    function logout() {
+      localStorage.removeItem('activeUser');
+      document.getElementById('home-screen').style.display = 'none';
+      document.getElementById('login-card').style.display = 'block';
+      document.getElementById('status').innerText = '';
+    }
+  </script>
+</body>
+</html>
